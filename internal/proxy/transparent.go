@@ -105,17 +105,17 @@ func (s *TransparentServer) relay(client, target net.Conn) {
 	done := make(chan struct{}, 2)
 
 	go func() {
-		io.Copy(target, client)
+		_, _ = io.Copy(target, client)
 		if tc, ok := target.(*net.TCPConn); ok {
-			tc.CloseWrite()
+			_ = tc.CloseWrite()
 		}
 		done <- struct{}{}
 	}()
 
 	go func() {
-		io.Copy(client, target)
+		_, _ = io.Copy(client, target)
 		if tc, ok := client.(*net.TCPConn); ok {
-			tc.CloseWrite()
+			_ = tc.CloseWrite()
 		}
 		done <- struct{}{}
 	}()
@@ -139,11 +139,11 @@ func (s *TransparentServer) trackConn(conn net.Conn, add bool) {
 // Shutdown stops the server
 func (s *TransparentServer) Shutdown() {
 	s.cancel()
-	s.listener.Close()
+	_ = s.listener.Close()
 
 	s.connsMu.Lock()
 	for conn := range s.conns {
-		conn.Close()
+		_ = conn.Close()
 	}
 	s.connsMu.Unlock()
 }
@@ -173,7 +173,7 @@ func getOriginalDst(conn net.Conn) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get file descriptor: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	fd := int(file.Fd())
 

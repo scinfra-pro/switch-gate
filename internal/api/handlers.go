@@ -92,23 +92,23 @@ func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4")
 
-	fmt.Fprintf(w, "# HELP switch_gate_bytes_total Total bytes transferred\n")
-	fmt.Fprintf(w, "# TYPE switch_gate_bytes_total counter\n")
+	_, _ = fmt.Fprintf(w, "# HELP switch_gate_bytes_total Total bytes transferred\n")
+	_, _ = fmt.Fprintf(w, "# TYPE switch_gate_bytes_total counter\n")
 	for mode, bytes := range stats.Bytes {
-		fmt.Fprintf(w, "switch_gate_bytes_total{mode=\"%s\"} %d\n", mode, bytes)
+		_, _ = fmt.Fprintf(w, "switch_gate_bytes_total{mode=\"%s\"} %d\n", mode, bytes)
 	}
 
-	fmt.Fprintf(w, "# HELP switch_gate_connections_active Active connections\n")
-	fmt.Fprintf(w, "# TYPE switch_gate_connections_active gauge\n")
-	fmt.Fprintf(w, "switch_gate_connections_active %d\n", s.proxy.ActiveConnections())
+	_, _ = fmt.Fprintf(w, "# HELP switch_gate_connections_active Active connections\n")
+	_, _ = fmt.Fprintf(w, "# TYPE switch_gate_connections_active gauge\n")
+	_, _ = fmt.Fprintf(w, "switch_gate_connections_active %d\n", s.proxy.ActiveConnections())
 
-	fmt.Fprintf(w, "# HELP switch_gate_connections_total Total connections\n")
-	fmt.Fprintf(w, "# TYPE switch_gate_connections_total counter\n")
-	fmt.Fprintf(w, "switch_gate_connections_total %d\n", stats.TotalConns)
+	_, _ = fmt.Fprintf(w, "# HELP switch_gate_connections_total Total connections\n")
+	_, _ = fmt.Fprintf(w, "# TYPE switch_gate_connections_total counter\n")
+	_, _ = fmt.Fprintf(w, "switch_gate_connections_total %d\n", stats.TotalConns)
 
-	fmt.Fprintf(w, "# HELP switch_gate_uptime_seconds Uptime in seconds\n")
-	fmt.Fprintf(w, "# TYPE switch_gate_uptime_seconds gauge\n")
-	fmt.Fprintf(w, "switch_gate_uptime_seconds %.0f\n", stats.Uptime.Seconds())
+	_, _ = fmt.Fprintf(w, "# HELP switch_gate_uptime_seconds Uptime in seconds\n")
+	_, _ = fmt.Fprintf(w, "# TYPE switch_gate_uptime_seconds gauge\n")
+	_, _ = fmt.Fprintf(w, "switch_gate_uptime_seconds %.0f\n", stats.Uptime.Seconds())
 }
 
 func (s *Server) handleSetLimit(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +138,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 func (s *Server) jsonResponse(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 func (s *Server) jsonError(w http.ResponseWriter, status int, message string) {

@@ -18,8 +18,8 @@ const (
 
 // socks5Handshake performs SOCKS5 handshake and returns target address
 func (s *Server) socks5Handshake(conn net.Conn) (string, error) {
-	conn.SetDeadline(time.Now().Add(10 * time.Second))
-	defer conn.SetDeadline(time.Time{})
+	_ = conn.SetDeadline(time.Now().Add(10 * time.Second))
+	defer func() { _ = conn.SetDeadline(time.Time{}) }()
 
 	// Read: VER | NMETHODS | METHODS
 	buf := make([]byte, 2)
@@ -99,5 +99,5 @@ func (s *Server) socks5Handshake(conn net.Conn) (string, error) {
 func (s *Server) socks5Reply(conn net.Conn, status byte) {
 	// VER | REP | RSV | ATYP | BND.ADDR | BND.PORT
 	reply := []byte{socks5Version, status, 0x00, atypIPv4, 0, 0, 0, 0, 0, 0}
-	conn.Write(reply)
+	_, _ = conn.Write(reply)
 }
