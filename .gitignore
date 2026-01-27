@@ -5,8 +5,8 @@ bin/
 *.dll
 *.so
 *.dylib
-switch-gate
-switch-gate-*
+/switch-gate
+/switch-gate-*
 
 # Test
 *.test
