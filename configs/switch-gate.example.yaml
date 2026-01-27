@@ -1,0 +1,31 @@
+# switch-gate configuration example
+# Copy this file to switch-gate.yaml and customize
+
+server:
+  listen: "0.0.0.0:18388"       # SOCKS5 proxy port
+  transparent: "0.0.0.0:18389"  # Transparent proxy for iptables REDIRECT (Linux only)
+  api: "127.0.0.1:9090"         # HTTP API (localhost only for security)
+
+modes:
+  direct:
+    interface: ""
+    local_ip: ""  # Server's public IP to bypass tunnel routing (optional)
+  
+  warp:
+    interface: "WARP"  # Tunnel interface name (e.g., warp0, WARP)
+  
+  home:
+    type: "socks5"
+    host: "proxy.example.com"
+    port: 7000
+    username: "your_username"
+    password: "${PROXY_PASSWORD}"  # Use environment variable for security
+
+limits:
+  home:
+    max_mb: 100              # Traffic limit in MB (0 = unlimited)
+    auto_switch_to: "warp"   # Mode to switch to when limit is reached
+
+logging:
+  level: "info"    # debug, info, warn, error
+  format: "json"   # json or text
