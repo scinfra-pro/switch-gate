@@ -56,11 +56,32 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          name: switch-gate ${{ steps.version.outputs.VERSION }}
+          body: |
+            ## switch-gate ${{ steps.version.outputs.VERSION }}
+            
+            ### Installation
+            
+            ```bash
+            # Download binary
+            wget https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.VERSION }}/switch-gate-linux-amd64
+            
+            # Make executable
+            chmod +x switch-gate-linux-amd64
+            
+            # Move to PATH
+            sudo mv switch-gate-linux-amd64 /usr/local/bin/switch-gate
+            ```
+            
+            ### Verify checksums
+            
+            ```bash
+            sha256sum -c checksums.txt
+            ```
           files: |
             dist/switch-gate-linux-amd64
             dist/switch-gate-linux-arm64
             dist/checksums.txt
-          generate_release_notes: true
           draft: false
           prerelease: false
         env:
