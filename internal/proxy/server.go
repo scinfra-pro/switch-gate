@@ -64,7 +64,7 @@ func (s *Server) Serve() error {
 
 func (s *Server) handleConnection(clientConn net.Conn) {
 	defer s.trackConn(clientConn, false)
-	defer clientConn.Close()
+	defer func() { _ = clientConn.Close() }()
 
 	// SOCKS5 handshake
 	targetAddr, err := s.socks5Handshake(clientConn)
@@ -80,7 +80,7 @@ func (s *Server) handleConnection(clientConn net.Conn) {
 		s.socks5Reply(clientConn, 0x05) // Connection refused
 		return
 	}
-	defer targetConn.Close()
+	defer func() { _ = targetConn.Close() }()
 
 	// Success reply
 	s.socks5Reply(clientConn, 0x00)

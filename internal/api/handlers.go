@@ -36,7 +36,7 @@ type HomeStats struct {
 	CostUSD     float64 `json:"cost_usd"`
 }
 
-func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleStatus(w http.ResponseWriter, _ *http.Request) {
 	stats := s.metrics.GetStats()
 
 	directMB := float64(stats.Bytes["direct"]) / 1024 / 1024
@@ -87,7 +87,7 @@ func (s *Server) handleSetMode(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleMetrics(w http.ResponseWriter, _ *http.Request) {
 	stats := s.metrics.GetStats()
 
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4")
@@ -131,7 +131,7 @@ func (s *Server) handleSetLimit(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	s.jsonResponse(w, http.StatusOK, map[string]string{"status": "healthy"})
 }
 

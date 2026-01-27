@@ -14,7 +14,7 @@ import (
 type TransparentServer struct{}
 
 // NewTransparent returns an error on non-Linux platforms
-func NewTransparent(addr string, r *router.Router, m *metrics.Metrics) (*TransparentServer, error) {
+func NewTransparent(_ string, _ *router.Router, _ *metrics.Metrics) (*TransparentServer, error) {
 	return nil, fmt.Errorf("transparent proxy is only supported on Linux")
 }
 
@@ -31,6 +31,6 @@ func (s *TransparentServer) Addr() net.Addr {
 	return nil
 }
 
-func getOriginalDst(conn net.Conn) (string, error) {
+func getOriginalDst(_ net.Conn) (string, error) {
 	return "", fmt.Errorf("SO_ORIGINAL_DST is only supported on Linux")
 }

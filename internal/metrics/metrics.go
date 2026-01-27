@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -18,8 +17,6 @@ type Metrics struct {
 	// Connections
 	activeConns atomic.Int32
 	totalConns  atomic.Uint64
-
-	mu sync.RWMutex
 }
 
 // New creates a new Metrics instance

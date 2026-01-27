@@ -78,7 +78,7 @@ func (s *TransparentServer) Serve() error {
 
 func (s *TransparentServer) handleConnection(clientConn net.Conn) {
 	defer s.trackConn(clientConn, false)
-	defer clientConn.Close()
+	defer func() { _ = clientConn.Close() }()
 
 	// Get original destination from SO_ORIGINAL_DST
 	targetAddr, err := getOriginalDst(clientConn)
@@ -95,7 +95,7 @@ func (s *TransparentServer) handleConnection(clientConn net.Conn) {
 		log.Printf("ERROR: Failed to dial %s: %v", targetAddr, err)
 		return
 	}
-	defer targetConn.Close()
+	defer func() { _ = targetConn.Close() }()
 
 	// Bidirectional relay
 	s.relay(clientConn, targetConn)

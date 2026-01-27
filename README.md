@@ -112,6 +112,29 @@ curl -X POST http://localhost:9090/mode/warp
 curl -X POST http://localhost:9090/mode/home
 ```
 
+## Development
+
+### Linting
+
+Install [golangci-lint](https://golangci-lint.run/):
+
+```bash
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+```
+
+Run linter:
+
+```bash
+make lint
+```
+
+### Testing
+
+```bash
+make test          # Run tests
+make test-cover    # Run tests with coverage
+```
+
 ## Documentation
 
 - [Architecture](docs/architecture.md) — How it works
