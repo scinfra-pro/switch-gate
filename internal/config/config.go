@@ -8,10 +8,19 @@ import (
 
 // Config represents the application configuration
 type Config struct {
-	Server  ServerConfig  `yaml:"server"`
-	Modes   ModesConfig   `yaml:"modes"`
-	Limits  LimitsConfig  `yaml:"limits"`
-	Logging LoggingConfig `yaml:"logging"`
+	Server   ServerConfig   `yaml:"server"`
+	Modes    ModesConfig    `yaml:"modes"`
+	Limits   LimitsConfig   `yaml:"limits"`
+	Webhooks WebhooksConfig `yaml:"webhooks"`
+	Logging  LoggingConfig  `yaml:"logging"`
+}
+
+// WebhooksConfig defines webhook settings
+type WebhooksConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	URL     string `yaml:"url"`
+	Secret  string `yaml:"secret"`
+	Source  string `yaml:"source"` // VPS identifier for event source
 }
 
 // ServerConfig defines server endpoints

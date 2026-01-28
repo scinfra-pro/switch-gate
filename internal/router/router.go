@@ -10,6 +10,11 @@ import (
 	"github.com/scinfra-pro/switch-gate/internal/metrics"
 )
 
+// WebhookSender is an interface for sending webhook events
+type WebhookSender interface {
+	Send(event string, payload map[string]interface{})
+}
+
 // Router manages traffic routing through different modes
 type Router struct {
 	mu      sync.RWMutex
@@ -23,16 +28,20 @@ type Router struct {
 	// Upstream proxy limits
 	homeLimitBytes uint64
 	homeAutoSwitch Mode
+
+	// Webhook for event notifications
+	webhook WebhookSender
 }
 
 // New creates a new router with configured dialers
-func New(cfg *config.Config, m *metrics.Metrics) (*Router, error) {
+func New(cfg *config.Config, m *metrics.Metrics, webhook WebhookSender) (*Router, error) {
 	r := &Router{
 		mode:           ModeDirect,
 		dialers:        make(map[Mode]Dialer),
 		metrics:        m,
 		homeLimitBytes: uint64(cfg.Limits.Home.MaxMB) * 1024 * 1024,
 		homeAutoSwitch: Mode(cfg.Limits.Home.AutoSwitchTo),
+		webhook:        webhook,
 	}
 
 	// Always available: direct (bound to local IP if configured)
@@ -92,8 +101,19 @@ func (r *Router) SetMode(mode Mode) error {
 			r.metrics.GetBytes("home")/1024/1024)
 	}
 
+	oldMode := r.mode
 	r.mode = mode
 	log.Printf("INFO: Mode switched to %s", mode)
+
+	// Send webhook notification
+	if r.webhook != nil && oldMode != mode {
+		r.webhook.Send("mode.changed", map[string]interface{}{
+			"from":    oldMode.String(),
+			"to":      mode.String(),
+			"trigger": "manual",
+		})
+	}
+
 	return nil
 }
 
@@ -176,11 +196,32 @@ func (r *Router) CheckLimits() {
 	defer r.mu.Unlock()
 
 	if r.mode == ModeHome && r.isHomeExhaustedLocked() {
-		log.Printf("WARN: Home proxy limit reached, switching to %s", r.homeAutoSwitch)
-		if _, ok := r.dialers[r.homeAutoSwitch]; ok {
-			r.mode = r.homeAutoSwitch
-		} else {
-			r.mode = ModeDirect
+		oldMode := r.mode
+		newMode := r.homeAutoSwitch
+		if _, ok := r.dialers[newMode]; !ok {
+			newMode = ModeDirect
+		}
+
+		log.Printf("WARN: Home proxy limit reached, switching to %s", newMode)
+		r.mode = newMode
+
+		// Send webhook notifications
+		if r.webhook != nil {
+			usedMB := r.metrics.GetBytes("home") / 1024 / 1024
+			limitMB := r.homeLimitBytes / 1024 / 1024
+
+			r.webhook.Send("limit.reached", map[string]interface{}{
+				"mode":        "home",
+				"used_mb":     usedMB,
+				"limit_mb":    limitMB,
+				"switched_to": newMode.String(),
+			})
+
+			r.webhook.Send("mode.changed", map[string]interface{}{
+				"from":    oldMode.String(),
+				"to":      newMode.String(),
+				"trigger": "limit_reached",
+			})
 		}
 	}
 }

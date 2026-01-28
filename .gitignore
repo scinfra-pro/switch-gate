@@ -25,8 +25,14 @@ coverage.html
 .DS_Store
 Thumbs.db
 
-# Config (keep only example)
-configs/switch-gate.yaml
+# Config (keep only .example files)
+configs/*.yaml
+!configs/*.example.yaml
+
+# Environment files with secrets
+*.env
+.env*
+deploy.env
 
 # Build
 dist/

@@ -16,6 +16,7 @@ import (
 	"github.com/scinfra-pro/switch-gate/internal/metrics"
 	"github.com/scinfra-pro/switch-gate/internal/proxy"
 	"github.com/scinfra-pro/switch-gate/internal/router"
+	"github.com/scinfra-pro/switch-gate/internal/webhook"
 )
 
 var version = "dev"
@@ -41,7 +42,14 @@ func main() {
 	// Initialize components
 	met := metrics.New()
 
-	rtr, err := router.New(cfg, met)
+	// Webhook client (optional)
+	var webhookClient *webhook.Webhook
+	if cfg.Webhooks.Enabled && cfg.Webhooks.URL != "" {
+		webhookClient = webhook.New(cfg.Webhooks.URL, cfg.Webhooks.Secret, cfg.Webhooks.Source)
+		log.Printf("INFO: Webhooks enabled, sending to %s", cfg.Webhooks.URL)
+	}
+
+	rtr, err := router.New(cfg, met, webhookClient)
 	if err != nil {
 		log.Fatalf("Failed to create router: %v", err)
 	}

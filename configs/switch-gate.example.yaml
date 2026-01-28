@@ -26,6 +26,12 @@ limits:
     max_mb: 100              # Traffic limit in MB (0 = unlimited)
     auto_switch_to: "warp"   # Mode to switch to when limit is reached
 
+webhooks:
+  enabled: false                              # Enable webhook notifications
+  url: "http://10.0.5.10:8080/webhook/switch-gate"  # Webhook receiver URL
+  secret: "${WEBHOOK_SECRET}"                 # Shared secret for authentication
+  source: "my-vps"                            # VPS identifier for event source
+
 logging:
   level: "info"    # debug, info, warn, error
   format: "json"   # json or text
