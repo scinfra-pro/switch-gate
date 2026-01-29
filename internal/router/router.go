@@ -5,9 +5,15 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/scinfra-pro/switch-gate/internal/config"
 	"github.com/scinfra-pro/switch-gate/internal/metrics"
+)
+
+const (
+	// testDialTimeout is the timeout for testing mode connectivity
+	testDialTimeout = 5 * time.Second
 )
 
 // WebhookSender is an interface for sending webhook events
@@ -229,5 +235,57 @@ func (r *Router) CheckLimits() {
 				})
 			}
 		}
+	}
+}
+
+// TestCurrentMode tests if the current mode is working by attempting a test connection.
+// Returns (healthy, error). For direct mode, always returns (true, nil).
+func (r *Router) TestCurrentMode() (bool, error) {
+	r.mu.RLock()
+	mode := r.mode
+	dialer, ok := r.dialers[mode]
+	r.mu.RUnlock()
+
+	if !ok {
+		return false, fmt.Errorf("%s dialer not available", mode)
+	}
+
+	// Direct mode is always considered healthy
+	if mode == ModeDirect {
+		return true, nil
+	}
+
+	// Test endpoints - fast, reliable
+	endpoints := []string{"1.1.1.1:443", "8.8.8.8:443"}
+
+	for _, ep := range endpoints {
+		conn, err := dialWithTimeout(dialer, "tcp", ep, testDialTimeout)
+		if err == nil {
+			_ = conn.Close()
+			return true, nil
+		}
+	}
+
+	return false, fmt.Errorf("%s unreachable", mode)
+}
+
+// dialWithTimeout wraps dialer.Dial with a timeout
+func dialWithTimeout(dialer Dialer, network, address string, timeout time.Duration) (net.Conn, error) {
+	type dialResult struct {
+		conn net.Conn
+		err  error
+	}
+
+	result := make(chan dialResult, 1)
+	go func() {
+		conn, err := dialer.Dial(network, address)
+		result <- dialResult{conn, err}
+	}()
+
+	select {
+	case r := <-result:
+		return r.conn, r.err
+	case <-time.After(timeout):
+		return nil, fmt.Errorf("timeout after %v", timeout)
 	}
 }

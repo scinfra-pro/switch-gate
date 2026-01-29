@@ -12,6 +12,12 @@ Default: `http://127.0.0.1:9090`
 
 Returns current status and metrics.
 
+**Query parameters:**
+
+| Name | Type | Description |
+|------|------|-------------|
+| check | bool | Optional. If `true`, performs health check of current mode |
+
 **Response:**
 
 ```json
@@ -35,10 +41,53 @@ Returns current status and metrics.
 }
 ```
 
-**Example:**
+**Response with `?check=true` (mode healthy):**
+
+```json
+{
+  "mode": "warp",
+  "mode_healthy": true,
+  "uptime": "2h34m56s",
+  ...
+}
+```
+
+**Response with `?check=true` (mode unhealthy):**
+
+```json
+{
+  "mode": "warp",
+  "mode_healthy": false,
+  "mode_error": "warp_unreachable",
+  "uptime": "2h34m56s",
+  ...
+}
+```
+
+**Health check fields (only with `?check=true`):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `mode_healthy` | bool | Whether current mode is working |
+| `mode_error` | string | Error code (only if `mode_healthy` is false) |
+
+**Mode error codes:**
+
+| Code | Description |
+|------|-------------|
+| `warp_unreachable` | WARP tunnel not responding |
+| `warp_timeout` | Connection timeout through WARP |
+| `home_unreachable` | Home proxy not responding |
+| `home_timeout` | Connection timeout through Home |
+
+**Examples:**
 
 ```bash
+# Quick status (no health check)
 curl http://localhost:9090/status
+
+# Status with health check (~5 sec longer)
+curl "http://localhost:9090/status?check=true"
 ```
 
 ---

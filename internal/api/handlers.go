@@ -32,12 +32,23 @@ const (
 // StatusResponse represents the /status response
 type StatusResponse struct {
 	Mode        string       `json:"mode"`
+	ModeHealthy *bool        `json:"mode_healthy,omitempty"` // only with ?check=true
+	ModeError   *string      `json:"mode_error,omitempty"`   // only if mode_healthy=false
 	Uptime      string       `json:"uptime"`
 	Connections int          `json:"connections"`
 	Traffic     TrafficStats `json:"traffic"`
 	Home        HomeStats    `json:"home"`
 	Available   []string     `json:"available_modes"`
 }
+
+// Error codes for mode health check
+const (
+	ErrWarpUnreachable = "warp_unreachable"
+	ErrWarpTimeout     = "warp_timeout"
+	ErrHomeUnreachable = "home_unreachable"
+	ErrHomeTimeout     = "home_timeout"
+	ErrCheckFailed     = "check_failed"
+)
 
 // TrafficStats contains traffic statistics per mode
 type TrafficStats struct {
@@ -55,7 +66,7 @@ type HomeStats struct {
 	CostUSD     float64 `json:"cost_usd"`
 }
 
-func (s *Server) handleStatus(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	stats := s.metrics.GetStats()
 
 	directMB := float64(stats.Bytes["direct"]) / 1024 / 1024
@@ -85,6 +96,17 @@ func (s *Server) handleStatus(w http.ResponseWriter, _ *http.Request) {
 			CostUSD:     roundTo2(homeMB / 1024 * 3.50),
 		},
 		Available: available,
+	}
+
+	// Health check only if requested via ?check=true
+	if r.URL.Query().Get("check") == "true" {
+		healthy, err := s.router.TestCurrentMode()
+		resp.ModeHealthy = &healthy
+		if err != nil {
+			errCode := classifyModeError(err, s.router.GetMode().String())
+			resp.ModeError = &errCode
+			log.Printf("API: Mode health check failed: %s", err.Error())
+		}
 	}
 
 	s.jsonResponse(w, http.StatusOK, resp)
@@ -195,6 +217,31 @@ func classifySetModeError(err error) string {
 		return ErrHomeLimitReached
 	default:
 		return ErrInternal
+	}
+}
+
+// classifyModeError converts a mode health check error to an error code
+func classifyModeError(err error, mode string) string {
+	if err == nil {
+		return ""
+	}
+
+	msg := strings.ToLower(err.Error())
+	isTimeout := strings.Contains(msg, "timeout")
+
+	switch mode {
+	case "warp":
+		if isTimeout {
+			return ErrWarpTimeout
+		}
+		return ErrWarpUnreachable
+	case "home":
+		if isTimeout {
+			return ErrHomeTimeout
+		}
+		return ErrHomeUnreachable
+	default:
+		return ErrCheckFailed
 	}
 }
 
