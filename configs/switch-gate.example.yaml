@@ -27,10 +27,13 @@ limits:
     auto_switch_to: "warp"   # Mode to switch to when limit is reached
 
 webhooks:
-  enabled: false                              # Enable webhook notifications
-  url: "http://10.0.5.10:8080/webhook/switch-gate"  # Webhook receiver URL
-  secret: "${WEBHOOK_SECRET}"                 # Shared secret for authentication
-  source: "my-vps"                            # VPS identifier for event source
+  enabled: false                                        # Enable webhook notifications
+  url: "http://${WEBHOOK_HOST}/webhook/switch-gate"    # Webhook receiver URL
+  secret: "${WEBHOOK_SECRET}"                           # Shared secret for authentication
+  source: "my-vps"                                      # VPS identifier for event source
+  events:
+    mode_changed: false    # Send on mode switch (disable if using Telegram inline buttons)
+    limit_reached: true    # Send when home proxy limit is exhausted
 
 logging:
   level: "info"    # debug, info, warn, error

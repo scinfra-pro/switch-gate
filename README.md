@@ -140,6 +140,7 @@ make test-cover    # Run tests with coverage
 - [Architecture](docs/architecture.md) — How it works
 - [Configuration](docs/configuration.md) — Configuration reference
 - [API Reference](docs/api.md) — HTTP API documentation
+- [Webhooks](docs/webhooks.md) — Event notifications
 - [Monitoring](docs/monitoring.md) — Metrics, events, Prometheus
 - [Deployment](docs/deployment.md) — Deployment guide
 

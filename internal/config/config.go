@@ -17,10 +17,17 @@ type Config struct {
 
 // WebhooksConfig defines webhook settings
 type WebhooksConfig struct {
-	Enabled bool   `yaml:"enabled"`
-	URL     string `yaml:"url"`
-	Secret  string `yaml:"secret"`
-	Source  string `yaml:"source"` // VPS identifier for event source
+	Enabled bool         `yaml:"enabled"`
+	URL     string       `yaml:"url"`
+	Secret  string       `yaml:"secret"`
+	Source  string       `yaml:"source"` // VPS identifier for event source
+	Events  EventsConfig `yaml:"events"` // Event filtering
+}
+
+// EventsConfig defines which events to send
+type EventsConfig struct {
+	ModeChanged  bool `yaml:"mode_changed"`
+	LimitReached bool `yaml:"limit_reached"`
 }
 
 // ServerConfig defines server endpoints

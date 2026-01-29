@@ -64,6 +64,28 @@ limits:
     # Mode to switch to when limit is reached
     auto_switch_to: "warp"
 
+# Webhook notifications (optional)
+webhooks:
+  # Enable webhook notifications
+  enabled: false
+  
+  # Webhook receiver URL
+  url: "http://${WEBHOOK_HOST}/webhook/switch-gate"
+  
+  # Shared secret for authentication
+  secret: "${WEBHOOK_SECRET}"
+  
+  # VPS identifier included in event payload
+  source: "my-vps"
+  
+  # Event filtering (which events to send)
+  events:
+    # Send when mode changes (via API or auto-switch)
+    mode_changed: false
+    
+    # Send when home proxy limit is exhausted
+    limit_reached: true
+
 # Logging configuration
 logging:
   # Log level: debug, info, warn, error

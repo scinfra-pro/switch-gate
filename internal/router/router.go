@@ -30,7 +30,8 @@ type Router struct {
 	homeAutoSwitch Mode
 
 	// Webhook for event notifications
-	webhook WebhookSender
+	webhook       WebhookSender
+	webhookEvents config.EventsConfig
 }
 
 // New creates a new router with configured dialers
@@ -42,6 +43,7 @@ func New(cfg *config.Config, m *metrics.Metrics, webhook WebhookSender) (*Router
 		homeLimitBytes: uint64(cfg.Limits.Home.MaxMB) * 1024 * 1024,
 		homeAutoSwitch: Mode(cfg.Limits.Home.AutoSwitchTo),
 		webhook:        webhook,
+		webhookEvents:  cfg.Webhooks.Events,
 	}
 
 	// Always available: direct (bound to local IP if configured)
@@ -105,8 +107,8 @@ func (r *Router) SetMode(mode Mode) error {
 	r.mode = mode
 	log.Printf("INFO: Mode switched to %s", mode)
 
-	// Send webhook notification
-	if r.webhook != nil && oldMode != mode {
+	// Send webhook notification (if enabled)
+	if r.webhook != nil && oldMode != mode && r.webhookEvents.ModeChanged {
 		r.webhook.Send("mode.changed", map[string]interface{}{
 			"from":    oldMode.String(),
 			"to":      mode.String(),
@@ -205,23 +207,27 @@ func (r *Router) CheckLimits() {
 		log.Printf("WARN: Home proxy limit reached, switching to %s", newMode)
 		r.mode = newMode
 
-		// Send webhook notifications
+		// Send webhook notifications (if enabled)
 		if r.webhook != nil {
 			usedMB := r.metrics.GetBytes("home") / 1024 / 1024
 			limitMB := r.homeLimitBytes / 1024 / 1024
 
-			r.webhook.Send("limit.reached", map[string]interface{}{
-				"mode":        "home",
-				"used_mb":     usedMB,
-				"limit_mb":    limitMB,
-				"switched_to": newMode.String(),
-			})
+			if r.webhookEvents.LimitReached {
+				r.webhook.Send("limit.reached", map[string]interface{}{
+					"mode":        "home",
+					"used_mb":     usedMB,
+					"limit_mb":    limitMB,
+					"switched_to": newMode.String(),
+				})
+			}
 
-			r.webhook.Send("mode.changed", map[string]interface{}{
-				"from":    oldMode.String(),
-				"to":      newMode.String(),
-				"trigger": "limit_reached",
-			})
+			if r.webhookEvents.ModeChanged {
+				r.webhook.Send("mode.changed", map[string]interface{}{
+					"from":    oldMode.String(),
+					"to":      newMode.String(),
+					"trigger": "limit_reached",
+				})
+			}
 		}
 	}
 }
