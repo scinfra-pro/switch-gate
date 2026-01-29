@@ -5,9 +5,28 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/scinfra-pro/switch-gate/internal/router"
+)
+
+// SetModeResponse represents the POST /mode/{mode} response
+type SetModeResponse struct {
+	Success   bool   `json:"success"`
+	Requested string `json:"requested"`
+	Mode      string `json:"mode"`
+	Error     string `json:"error,omitempty"`
+	// Keep "status" for backward compatibility
+	Status string `json:"status,omitempty"`
+}
+
+// Error codes for SetModeResponse
+const (
+	ErrModeNotConfigured = "mode_not_configured"
+	ErrModeInvalid       = "mode_invalid"
+	ErrHomeLimitReached  = "home_limit_reached"
+	ErrInternal          = "internal_error"
 )
 
 // StatusResponse represents the /status response
@@ -72,18 +91,32 @@ func (s *Server) handleStatus(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) handleSetMode(w http.ResponseWriter, r *http.Request) {
-	mode := r.PathValue("mode")
+	requested := r.PathValue("mode")
 
-	if err := s.router.SetMode(router.Mode(mode)); err != nil {
-		s.jsonError(w, http.StatusBadRequest, err.Error())
+	if err := s.router.SetMode(router.Mode(requested)); err != nil {
+		// Mode switch failed — return current mode and error
+		currentMode := s.router.GetMode().String()
+		errorCode := classifySetModeError(err)
+
+		log.Printf("API: Mode switch to %s failed: %s", requested, err.Error())
+
+		s.jsonResponse(w, http.StatusOK, SetModeResponse{
+			Success:   false,
+			Requested: requested,
+			Mode:      currentMode,
+			Error:     errorCode,
+		})
 		return
 	}
 
-	log.Printf("API: Mode switched to %s", mode)
+	currentMode := s.router.GetMode().String()
+	log.Printf("API: Mode switched to %s", currentMode)
 
-	s.jsonResponse(w, http.StatusOK, map[string]string{
-		"status": "ok",
-		"mode":   mode,
+	s.jsonResponse(w, http.StatusOK, SetModeResponse{
+		Success:   true,
+		Requested: requested,
+		Mode:      currentMode,
+		Status:    "ok", // backward compatibility
 	})
 }
 
@@ -143,6 +176,26 @@ func (s *Server) jsonResponse(w http.ResponseWriter, status int, data interface{
 
 func (s *Server) jsonError(w http.ResponseWriter, status int, message string) {
 	s.jsonResponse(w, status, map[string]string{"error": message})
+}
+
+// classifySetModeError converts an error to an error code
+func classifySetModeError(err error) string {
+	if err == nil {
+		return ""
+	}
+
+	msg := err.Error()
+
+	switch {
+	case strings.Contains(msg, "invalid mode"):
+		return ErrModeInvalid
+	case strings.Contains(msg, "not available"):
+		return ErrModeNotConfigured
+	case strings.Contains(msg, "limit exhausted"):
+		return ErrHomeLimitReached
+	default:
+		return ErrInternal
+	}
 }
 
 func roundTo2(f float64) float64 {

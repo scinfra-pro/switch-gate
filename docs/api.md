@@ -53,22 +53,57 @@ Switch routing mode.
 |------|------|-------------|
 | mode | path | Target mode: `direct`, `warp`, or `home` |
 
+**Response fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | bool | Whether the requested mode was activated |
+| `requested` | string | The mode that was requested |
+| `mode` | string | The current active mode |
+| `error` | string | Error code (only if `success` is false) |
+| `status` | string | `"ok"` for backward compatibility (only if success) |
+
 **Response (success):**
 
 ```json
 {
-  "status": "ok",
-  "mode": "warp"
+  "success": true,
+  "requested": "warp",
+  "mode": "warp",
+  "status": "ok"
 }
 ```
 
-**Response (error):**
+**Response (failure — mode not available):**
 
 ```json
 {
-  "error": "mode warp is not available"
+  "success": false,
+  "requested": "warp",
+  "mode": "direct",
+  "error": "mode_not_configured"
 }
 ```
+
+**Response (failure — home limit reached):**
+
+```json
+{
+  "success": false,
+  "requested": "home",
+  "mode": "warp",
+  "error": "home_limit_reached"
+}
+```
+
+**Error codes:**
+
+| Code | Description |
+|------|-------------|
+| `mode_invalid` | Unknown mode (not direct/warp/home) |
+| `mode_not_configured` | Mode is valid but not configured |
+| `home_limit_reached` | Home proxy traffic limit exhausted |
+| `internal_error` | Unexpected internal error |
 
 **Examples:**
 
@@ -172,7 +207,7 @@ curl -X POST http://localhost:9090/limit/home \
 
 ## Error Responses
 
-All error responses have the format:
+Most endpoints return errors in this format:
 
 ```json
 {
@@ -180,12 +215,15 @@ All error responses have the format:
 }
 ```
 
+**Exception:** `POST /mode/{mode}` always returns HTTP 200 with structured response.
+Check `success` field to determine if mode switch succeeded.
+
 **HTTP Status Codes:**
 
 | Code | Description |
 |------|-------------|
-| 200 | Success |
-| 400 | Bad request (invalid mode, invalid JSON, etc.) |
+| 200 | Success (or mode switch with fallback) |
+| 400 | Bad request (invalid JSON, etc.) |
 | 404 | Endpoint not found |
 | 500 | Internal server error |
 
@@ -204,9 +242,16 @@ API="http://localhost:9090"
 current_mode=$(curl -s "$API/status" | jq -r .mode)
 echo "Current mode: $current_mode"
 
-# Switch mode based on condition
-if [ "$current_mode" = "direct" ]; then
-    curl -s -X POST "$API/mode/warp" | jq .
+# Switch mode and check result
+response=$(curl -s -X POST "$API/mode/warp")
+success=$(echo "$response" | jq -r .success)
+mode=$(echo "$response" | jq -r .mode)
+
+if [ "$success" = "true" ]; then
+    echo "Switched to: $mode"
+else
+    error=$(echo "$response" | jq -r .error)
+    echo "Failed to switch, staying on: $mode (error: $error)"
 fi
 ```
 
