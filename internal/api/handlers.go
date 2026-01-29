@@ -43,11 +43,12 @@ type StatusResponse struct {
 
 // Error codes for mode health check
 const (
-	ErrWarpUnreachable = "warp_unreachable"
-	ErrWarpTimeout     = "warp_timeout"
-	ErrHomeUnreachable = "home_unreachable"
-	ErrHomeTimeout     = "home_timeout"
-	ErrCheckFailed     = "check_failed"
+	ErrWarpUnreachable    = "warp_unreachable"
+	ErrWarpTimeout        = "warp_timeout"
+	ErrWarpInterfaceDown  = "warp_interface_down"
+	ErrHomeUnreachable    = "home_unreachable"
+	ErrHomeTimeout        = "home_timeout"
+	ErrCheckFailed        = "check_failed"
 )
 
 // TrafficStats contains traffic statistics per mode
@@ -228,9 +229,13 @@ func classifyModeError(err error, mode string) string {
 
 	msg := strings.ToLower(err.Error())
 	isTimeout := strings.Contains(msg, "timeout")
+	isInterfaceError := strings.Contains(msg, "interface")
 
 	switch mode {
 	case "warp":
+		if isInterfaceError {
+			return ErrWarpInterfaceDown
+		}
 		if isTimeout {
 			return ErrWarpTimeout
 		}

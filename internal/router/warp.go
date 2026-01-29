@@ -41,6 +41,11 @@ func (d *WarpDialer) Name() string {
 	return "warp"
 }
 
+// InterfaceName returns the tunnel interface name
+func (d *WarpDialer) InterfaceName() string {
+	return d.interfaceName
+}
+
 // LocalIP returns nil as tunnel uses default routing
 func (d *WarpDialer) LocalIP() net.IP {
 	return nil

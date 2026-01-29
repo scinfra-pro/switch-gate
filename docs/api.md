@@ -75,6 +75,7 @@ Returns current status and metrics.
 
 | Code | Description |
 |------|-------------|
+| `warp_interface_down` | WARP interface not found or down |
 | `warp_unreachable` | WARP tunnel not responding |
 | `warp_timeout` | Connection timeout through WARP |
 | `home_unreachable` | Home proxy not responding |

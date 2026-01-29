@@ -255,7 +255,16 @@ func (r *Router) TestCurrentMode() (bool, error) {
 		return true, nil
 	}
 
-	// Test endpoints - fast, reliable
+	// For WARP: first check if interface exists and is up
+	if mode == ModeWarp {
+		if warpDialer, ok := dialer.(*WarpDialer); ok {
+			if err := checkInterfaceUp(warpDialer.InterfaceName()); err != nil {
+				return false, err
+			}
+		}
+	}
+
+	// TCP test - verify actual connectivity
 	endpoints := []string{"1.1.1.1:443", "8.8.8.8:443"}
 
 	for _, ep := range endpoints {
@@ -267,6 +276,18 @@ func (r *Router) TestCurrentMode() (bool, error) {
 	}
 
 	return false, fmt.Errorf("%s unreachable", mode)
+}
+
+// checkInterfaceUp verifies that a network interface exists and is up
+func checkInterfaceUp(name string) error {
+	iface, err := net.InterfaceByName(name)
+	if err != nil {
+		return fmt.Errorf("%s interface not found", name)
+	}
+	if iface.Flags&net.FlagUp == 0 {
+		return fmt.Errorf("%s interface down", name)
+	}
+	return nil
 }
 
 // dialWithTimeout wraps dialer.Dial with a timeout
